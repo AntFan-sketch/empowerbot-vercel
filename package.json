@@ -1,9 +1,10 @@
 {
-  "type": "module"
-
   "name": "empowerbot-vercel",
   "version": "1.0.0",
   "main": "index.js",
+  "dependencies": {
+    "openai": "^5.20.3"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +20,6 @@
   },
   "homepage": "https://github.com/AntFan-sketch/empowerbot-vercel#readme",
   "description": "",
-  "dependencies": {
-    "openai": "^5.20.3"
-  }
+  "type": "module",
+  "private": "true"
 }
