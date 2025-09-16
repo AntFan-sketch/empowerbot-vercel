@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EmpowerBot</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+    #chat { border: 1px solid #ccc; padding: 1rem; height: 400px; overflow-y: auto; margin-bottom: 1rem; }
+    .user { color: blue; }
+    .bot { color: green; }
+    textarea { width: 100%; height: 60px; }
+    button { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h2>EmpowerBot – STEM Tutor</h2>
+  <div id="chat"></div>
+  <textarea id="message" placeholder="Ask EmpowerBot a question..."></textarea><br>
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const chat = document.getElementById('chat');
+
+    async function sendMessage() {
+      const textarea = document.getElementById('message');
+      const text = textarea.value.trim();
+      if (!text) return;
+
+      appendMessage('user', text);
+      textarea.value = '';
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: text }] })
+      });
+
+      const data = await response.json();
+      appendMessage('bot', data.reply.content);
+    }
+
+    function appendMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = role;
+      div.textContent = `${role === 'user' ? 'You' : 'EmpowerBot'}: ${content}`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>

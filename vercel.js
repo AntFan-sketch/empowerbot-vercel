@@ -104,9 +104,12 @@ node_modules
 // File: vercel.json
 {
   "rewrites": [
-    { "source": "/", "destination": "/public/chat.html" }
+    { "source": "/", "destination": "/chat.html" }
   ]
 }
+
+
+
 
 // File: README.md
 # EmpowerBot Chat (Vercel + OpenAI)
@@ -125,4 +128,5 @@ A simple STEM tutoring chatbot using GPT-4 and deployed on Vercel.
 
 ---
 
-Let me know if you'd like a floating widget version instead of an embedded page.
+
+
