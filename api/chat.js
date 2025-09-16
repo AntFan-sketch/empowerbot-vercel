@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid request body" });
     }
 
-    // If "gpt-4" errors for your account, switch to "gpt-4o" or "gpt-4o-mini"
+    // Use a widely-available model
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -49,11 +49,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ reply: completion.choices[0].message });
   } catch (err) {
+    // Surface real error details to the client for debugging
     console.error("API error:", err);
-    return res
-      .status(500)
-      .json({ error: "Something went wrong", details: err?.message ?? "" });
+    const details =
+      err?.response?.data?.error?.message ||
+      err?.message ||
+      "Unknown error";
+    return res.status(500).json({ error: "Something went wrong", details });
   }
 }
+
 
 

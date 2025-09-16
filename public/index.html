@@ -38,7 +38,7 @@
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        appendMessage('bot', `⚠️ Error ${response.status}: ${err.error || err.details || 'Unknown error'}`);
+        appendMessage('bot', `⚠️ Error ${response.status}: ${err.details || err.error || 'Unknown error'}`);
         return;
       }
 
@@ -58,6 +58,7 @@
     chat.scrollTop = chat.scrollHeight;
   }
 </script>
+
 
 </body>
 </html>
