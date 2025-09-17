@@ -1,64 +1,240 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>EmpowerBot</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
-    #chat { border: 1px solid #ccc; padding: 1rem; height: 400px; overflow-y: auto; margin-bottom: 1rem; }
-    .user { color: blue; }
-    .bot { color: green; }
-    textarea { width: 100%; height: 60px; }
-    button { margin-top: 0.5rem; }
-  </style>
-</head>
-<body>
-  <h2>EmpowerBot – STEM Tutor</h2>
-  <div id="chat"></div>
-  <textarea id="message" placeholder="Ask EmpowerBot a question..."></textarea><br>
-  <button onclick="sendMessage()">Send</button>
-
-  <script>
-  const chat = document.getElementById('chat');
-
-  async function sendMessage() {
-    const textarea = document.getElementById('message');
-    const text = textarea.value.trim();
-    if (!text) return;
-
-    appendMessage('user', text);
-    textarea.value = '';
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: text }] })
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        appendMessage('bot', `⚠️ Error ${response.status}: ${err.details || err.error || 'Unknown error'}`);
-        return;
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EmpowerBot Tutor Chat | Empowering Me</title>
+    <meta name="description" content="Chat with EmpowerBot for friendly Junior & Leaving Certificate study help." />
+    <style>
+      /* ===== Brandable theme tokens ===== */
+      :root {
+        --bg: #0b1020;              /* page background */
+        --panel: #0f172a;           /* chat panel background */
+        --panel-2: #111827;         /* input/footer background */
+        --text: #e5e7eb;            /* primary text */
+        --muted: #9aa4b2;           /* secondary text */
+        --border: #1f2a44;          /* borders */
+        --accent: #2563eb;          /* brand accent (blue) */
+        --accent-2: #7c3aed;        /* secondary accent (purple) */
+        --bot-bubble: #182132;      /* bot bubble */
+        --user-bubble: linear-gradient(135deg, #2563eb, #7c3aed);
+        --error: #ef4444;           /* errors */
+        --radius-xl: 18px;
+        --shadow: 0 10px 30px rgba(0,0,0,.35);
       }
 
-      const data = await response.json();
-      appendMessage('bot', data.reply?.content || '(no content)');
-    } catch (e) {
-      appendMessage('bot', '⚠️ Network error. Check console.');
-      console.error(e);
-    }
-  }
+      /* Light mode auto support */
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f5f7fb;
+          --panel: #ffffff;
+          --panel-2: #ffffff;
+          --text: #0f172a;
+          --muted: #475569;
+          --border: #e5e7eb;
+          --bot-bubble: #f1f5f9;
+          --user-bubble: linear-gradient(135deg, #2563eb, #7c3aed);
+          --shadow: 0 10px 30px rgba(2,6,23,.08);
+        }
+      }
 
-  function appendMessage(role, content) {
-    const div = document.createElement('div');
-    div.className = role;
-    div.textContent = `${role === 'user' ? 'You' : 'EmpowerBot'}: ${content}`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
-</script>
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0; background: var(--bg); color: var(--text);
+        font: 16px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        display: grid; place-items: center;
+      }
 
+      .wrap { width: min(920px, 96vw); height: min(86vh, 880px); display: grid; grid-template-rows: auto 1fr auto; gap: 12px; }
 
-</body>
+      /* Header */
+      .header { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
+      .logo { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color:#fff; font-weight: 700; background: var(--user-bubble); }
+      .title { font-weight: 700; letter-spacing:.2px; }
+      .sub { color: var(--muted); font-size: 13px; }
+      .dot { width: 8px; height: 8px; border-radius: 999px; background: #22c55e; display:inline-block; margin-right:6px; box-shadow:0 0 0 3px rgba(34,197,94,.15); }
+
+      /* Chat panel */
+      .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 16px; overflow: hidden; box-shadow: var(--shadow); display: grid; grid-template-rows: 1fr auto; }
+      .messages { list-style: none; padding: 0; margin: 0; overflow-y: auto; scrollbar-width: thin; }
+      .messages li { display: grid; gap: 6px; margin: 8px 0; }
+      .row { display: flex; align-items: flex-end; gap: 10px; }
+      .avatar { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; display:grid; place-items:center; background: #0b1020; border:1px solid var(--border); color:#cbd5e1; font-weight:700; }
+      .avatar.bot { background: #0e1726; }
+      .bubble { max-width: 72%; padding: 12px 14px; border-radius: 14px; border:1px solid var(--border); position: relative; }
+      .bubble.bot { background: var(--bot-bubble); }
+      .bubble.user { color:#fff; background: var(--user-bubble); border: none; }
+      .meta { font-size: 12px; color: var(--muted); margin: 0 0 2px 44px; }
+
+      /* Typing indicator */
+      .typing { display:inline-flex; gap:6px; align-items:center; }
+      .dotty { width: 6px; height: 6px; border-radius: 999px; background: #9aa4b2; opacity:.6; animation: bounce 1.2s infinite; }
+      .dotty:nth-child(2){ animation-delay:.15s }
+      .dotty:nth-child(3){ animation-delay:.3s }
+      @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); opacity:.35; } 40% { transform: translateY(-4px); opacity:.9; } }
+
+      /* Composer */
+      .composer { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 10px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; box-shadow: var(--shadow); }
+      textarea { resize: none; width: 100%; min-height: 52px; max-height: 160px; background: transparent; color: var(--text); border: none; outline: none; font: 16px/1.4 inherit; padding: 10px 12px; }
+      .actions { display: flex; gap: 8px; align-items: center; padding: 0 6px 6px 0; }
+      .btn { appearance: none; border:1px solid var(--border); background: var(--accent); color:#fff; padding: 10px 14px; border-radius: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 16px rgba(37,99,235,.35); transition: transform .08s ease, opacity .2s;
+      }
+      .btn:disabled { opacity: .6; cursor: not-allowed; box-shadow:none; }
+      .btn.secondary { background: transparent; color: var(--text); border-color: var(--border); box-shadow:none; }
+      .small { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+      .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" role="application" aria-label="EmpowerBot chat">
+      <header class="header">
+        <div class="logo" aria-hidden="true">E</div>
+        <div>
+          <div class="title">EmpowerBot</div>
+          <div class="sub"><span class="dot" aria-hidden="true"></span> Online • Friendly study help for Junior & Leaving Certificate</div>
+        </div>
+      </header>
+
+      <section class="panel">
+        <ul id="messages" class="messages" aria-live="polite" aria-relevant="additions"></ul>
+
+        <div class="composer">
+          <label class="sr-only" for="message">Message EmpowerBot</label>
+          <textarea id="message" placeholder="Type your question… (Shift+Enter for newline)" autocomplete="off"></textarea>
+          <div class="actions">
+            <button id="clear" class="btn secondary" title="Clear conversation">Clear</button>
+            <button id="send" class="btn" title="Send (Enter)">Send ▸</button>
+          </div>
+        </div>
+      </section>
+
+      <p class="small">By chatting you agree that your messages are sent to a third‑party AI service to generate responses.</p>
+    </div>
+
+    <script>
+      // ===== Chat state =====
+      const messagesEl = document.getElementById('messages');
+      const input = document.getElementById('message');
+      const sendBtn = document.getElementById('send');
+      const clearBtn = document.getElementById('clear');
+
+      /**
+       * In-memory conversation we send to the API.
+       * Server adds the system prompt; we only keep user/assistant turns.
+       */
+      let convo = [];
+      let sending = false;
+
+      // ===== Helpers =====
+      function el(tag, cls) { const n = document.createElement(tag); if (cls) n.className = cls; return n; }
+      function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+      function addBubble(role, content, opts = {}) {
+        const li = el('li');
+        const meta = el('div', 'meta');
+        meta.textContent = opts.meta || (role === 'user' ? 'You' : 'EmpowerBot');
+
+        const row = el('div', 'row');
+        const avatar = el('div', 'avatar ' + (role === 'user' ? 'user' : 'bot'));
+        avatar.textContent = role === 'user' ? 'Y' : 'E';
+
+        const bubble = el('div', 'bubble ' + (role === 'user' ? 'user' : 'bot'));
+        // Safe text insertion
+        bubble.textContent = content;
+
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+        li.appendChild(meta);
+        li.appendChild(row);
+        messagesEl.appendChild(li);
+        scrollToBottom();
+        return { li, bubble };
+      }
+
+      function addTyping() {
+        const li = el('li');
+        const meta = el('div', 'meta'); meta.textContent = 'EmpowerBot is typing…';
+        const row = el('div', 'row');
+        const avatar = el('div', 'avatar bot'); avatar.textContent = 'E';
+        const bubble = el('div', 'bubble bot');
+        const wrap = el('span', 'typing');
+        wrap.appendChild(el('span', 'dotty'));
+        wrap.appendChild(el('span', 'dotty'));
+        wrap.appendChild(el('span', 'dotty'));
+        bubble.appendChild(wrap);
+        row.appendChild(avatar); row.appendChild(bubble);
+        li.appendChild(meta); li.appendChild(row);
+        messagesEl.appendChild(li);
+        scrollToBottom();
+        return li;
+      }
+
+      function removeTyping(node){ if (node && node.parentNode) node.parentNode.remove(); }
+
+      function setSending(state){ sending = state; sendBtn.disabled = state; input.disabled = state; }
+
+      // ===== Send flow =====
+      async function sendMessage(){
+        const text = (input.value || '').trim();
+        if (!text || sending) return;
+
+        setSending(true);
+        addBubble('user', text);
+        input.value = '';
+        autoResize();
+
+        convo.push({ role: 'user', content: text });
+        const typingNode = addTyping();
+
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: convo })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            removeTyping(typingNode);
+            addBubble('assistant', `⚠️ Error ${res.status}: ${err.details || err.error || 'Unknown error'}`);
+            return;
+          }
+
+          const data = await res.json();
+          const reply = data?.reply?.content || '';
+          removeTyping(typingNode);
+          addBubble('assistant', reply);
+          convo.push({ role: 'assistant', content: reply });
+        } catch (e) {
+          removeTyping(typingNode);
+          addBubble('assistant', '⚠️ Network error. Please try again.');
+          console.error(e);
+        } finally {
+          setSending(false);
+        }
+      }
+
+      // ===== UI events =====
+      sendBtn.addEventListener('click', sendMessage);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+      });
+      clearBtn.addEventListener('click', () => { convo = []; messagesEl.innerHTML = ''; input.focus(); });
+
+      // Auto-resize textarea
+      function autoResize(){
+        input.style.height = 'auto';
+        const max = 160; // px
+        input.style.height = Math.min(input.scrollHeight + 4, max) + 'px';
+      }
+      input.addEventListener('input', autoResize);
+      window.addEventListener('load', autoResize);
+
+      // Greeting message
+      addBubble('assistant', 'Hi! How can I help today? You can ask about any Junior or Leaving Certificate topic.');
+    </script>
+  </body>
 </html>
+
