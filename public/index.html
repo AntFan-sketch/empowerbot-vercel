@@ -64,6 +64,7 @@
       .avatar.bot { background: #0e1726; }
       .bubble { max-width: 72%; padding: 12px 14px; border-radius: 14px; border:1px solid var(--border); position: relative; }
       .bubble.bot { background: var(--bot-bubble); }
+      .bubble.bot strong { color: #ffffff; }
       .bubble.user { color:#fff; background: var(--user-bubble); border: none; }
       .meta { font-size: 12px; color: var(--muted); margin: 0 0 2px 44px; }
 
@@ -131,6 +132,28 @@
       function el(tag, cls) { const n = document.createElement(tag); if (cls) n.className = cls; return n; }
       function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
 
+      // Format assistant replies: bold the first sentence so the direct answer pops
+      function escapeHTML(s){
+        return (s||"")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+      function formatAssistant(text){
+        const t = (text || '').trim();
+        if (!t) return '';
+        const n = t.indexOf('
+');
+        const p = t.indexOf('. ');
+        const cut = n >= 0 ? n : (p >= 0 ? p + 1 : t.length);
+        const first = t.slice(0, cut).trim();
+        const rest = t.slice(cut).trim();
+        const firstHTML = `<strong>${escapeHTML(first)}</strong>`;
+        return rest ? firstHTML + '<br>' + escapeHTML(rest) : firstHTML;
+      }
+
       function addBubble(role, content, opts = {}) {
         const li = el('li');
         const meta = el('div', 'meta');
@@ -142,7 +165,7 @@
 
         const bubble = el('div', 'bubble ' + (role === 'user' ? 'user' : 'bot'));
         // Safe text insertion
-        bubble.textContent = content;
+        if (role === 'assistant') { bubble.innerHTML = formatAssistant(content); } else { bubble.textContent = content; }
 
         row.appendChild(avatar);
         row.appendChild(bubble);
@@ -237,4 +260,5 @@
     </script>
   </body>
 </html>
+
 
