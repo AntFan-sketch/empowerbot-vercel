@@ -34,18 +34,26 @@ export default async function handler(req, res) {
     }
 
     // Use a widely-available model
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are EmpowerBot, a warm and patient STEM tutor for Junior and Leaving Certificate students in Ireland. Use the Socratic method. Always respond in UK English."
-        },
-        ...messages
-      ],
-      temperature: 0.7
-    });
+// ...
+const completion = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  temperature: 0.3,
+  messages: [
+    {
+      role: "system",
+      content: [
+        "You are EmpowerBot for Junior/Leaving Certificate students (Ireland).",
+        "Use UK English. Be warm and concise.",
+        "Policy:",
+        "• If the question is routine/factual or a single-step calculation (e.g., “What is 2+2?”, definitions, unit conversions), give the direct answer FIRST in one short line with minimal fuss. Do NOT ask a follow-up question for these.",
+        "• If the task is multi-step, conceptual, or the student seems stuck, use gentle Socratic prompts: 1–2 short guiding questions max.",
+        "• Keep any reflection prompts brief and relevant."
+      ].join("\n")
+    },
+    ...messages
+  ]
+});
+
 
     return res.status(200).json({ reply: completion.choices[0].message });
   } catch (err) {
